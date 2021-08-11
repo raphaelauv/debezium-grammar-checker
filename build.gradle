@@ -1,0 +1,72 @@
+plugins {
+    id 'java'
+    id "de.undercouch.download" version "4.1.1"
+    id 'antlr'
+}
+
+task downloadParser(type: Download) {
+//    src 'https://raw.githubusercontent.com/antlr/grammars-v4/master/sql/mysql/Positive-Technologies/MySqlParser.g4'
+    src 'https://raw.githubusercontent.com/debezium/debezium/master/debezium-ddl-parser/src/main/antlr4/io/debezium/ddl/parser/mysql/generated/MySqlParser.g4'
+    dest 'src/main/antlr/'
+}
+
+task downloadLexer(type: Download) {
+//    src 'https://raw.githubusercontent.com/antlr/grammars-v4/master/sql/mysql/Positive-Technologies/MySqlLexer.g4'
+    src 'https://raw.githubusercontent.com/debezium/debezium/master/debezium-ddl-parser/src/main/antlr4/io/debezium/ddl/parser/mysql/generated/MySqlLexer.g4'
+    dest 'src/main/antlr/'
+}
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    antlr "org.antlr:antlr4:4.9.2"
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
+    implementation group: 'org.antlr', name: 'antlr4', version: '4.9.2'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+}
+
+generateGrammarSource {
+    outputDirectory = new File("${project.buildDir}/generated-src/antlr/main/check".toString())
+    maxHeapSize = "64m"
+    outputDirectory = file("$outputDirectory")
+    arguments += ['-package', 'check']
+    arguments += ['-visitor']
+    arguments += ['-no-listener']
+
+    inputs.files(source.files)
+
+}
+
+
+test {
+    useJUnitPlatform()
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src/main/java'
+            srcDir 'build/generated-src/antlr/main/'
+        }
+    }
+    test {
+        java {
+            srcDir 'src/test/java'
+        }
+    }
+}
+
+configurations {
+    compile {
+        extendsFrom = extendsFrom.findAll { it != configurations.antlr }
+    }
+}
+
+task checkRessourceFile(type: JavaExec) {
+    classpath sourceSets.main.runtimeClasspath
+    main = "check.CheckFile"
+}
